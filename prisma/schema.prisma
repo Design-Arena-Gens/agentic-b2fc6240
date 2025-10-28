@@ -1,0 +1,124 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password      String
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  orders        Order[]
+  reviews       Review[]
+  addresses     Address[]
+  cart          CartItem[]
+}
+
+model Address {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName     String
+  street       String
+  city         String
+  state        String
+  zipCode      String
+  country      String
+  phone        String
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  Order        Order[]
+}
+
+model Product {
+  id              String       @id @default(cuid())
+  name            String
+  description     String
+  price           Float
+  originalPrice   Float?
+  category        String
+  brand           String
+  images          String[]
+  stock           Int
+  rating          Float        @default(0)
+  reviewCount     Int          @default(0)
+  featured        Boolean      @default(false)
+  specifications  Json?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  reviews         Review[]
+  orderItems      OrderItem[]
+  cartItems       CartItem[]
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId])
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  orderNumber     String      @unique
+  status          String      @default("pending")
+  subtotal        Float
+  tax             Float
+  shipping        Float
+  total           Float
+  shippingAddress Address     @relation(fields: [addressId], references: [id])
+  addressId       String
+  paymentMethod   String
+  paymentIntentId String?
+  trackingNumber  String?
+  items           OrderItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float
+  createdAt DateTime @default(now())
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  rating    Int
+  title     String
+  comment   String
+  helpful   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId])
+}
